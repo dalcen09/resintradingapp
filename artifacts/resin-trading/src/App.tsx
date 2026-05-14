@@ -7,8 +7,12 @@ import { CategoryView } from "./pages/CategoryView";
 import { TrashView } from "./pages/TrashView";
 import { Matches } from "./pages/Matches";
 import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { useState, useEffect } from "react";
-import { verifyToken, clearToken } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +23,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+type AuthPage = "login" | "register" | "forgot" | "reset";
 
 function AppRoutes({ onLogout }: { onLogout: () => void }) {
   return (
@@ -35,18 +41,26 @@ function AppRoutes({ onLogout }: { onLogout: () => void }) {
 }
 
 function App() {
-  const [authenticated, setAuthenticated] = useState<boolean | "loading">("loading");
+  const [session, setSession] = useState<Session | null | "loading">("loading");
+  const [authPage, setAuthPage] = useState<AuthPage>("login");
+  const [isReset, setIsReset] = useState(false);
 
   useEffect(() => {
-    verifyToken().then(setAuthenticated);
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsReset(true);
+      }
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  function handleLogout() {
-    clearToken();
-    setAuthenticated(false);
-  }
-
-  if (authenticated === "loading") {
+  if (session === "loading") {
     return (
       <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f0faf4" }}>
         <div style={{ width: 32, height: 32, border: "3px solid hsl(152,73%,41%)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
@@ -55,15 +69,27 @@ function App() {
     );
   }
 
-  if (!authenticated) {
-    return <LoginPage onSuccess={() => setAuthenticated(true)} />;
+  if (session && isReset) {
+    return <ResetPasswordPage onDone={() => setIsReset(false)} />;
+  }
+
+  if (!session) {
+    if (authPage === "register") return <RegisterPage onBack={() => setAuthPage("login")} />;
+    if (authPage === "forgot") return <ForgotPasswordPage onBack={() => setAuthPage("login")} />;
+    return (
+      <LoginPage
+        onSuccess={() => setAuthPage("login")}
+        onRegister={() => setAuthPage("register")}
+        onForgotPassword={() => setAuthPage("forgot")}
+      />
+    );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppRoutes onLogout={handleLogout} />
+          <AppRoutes onLogout={() => supabase.auth.signOut()} />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
