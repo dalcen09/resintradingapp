@@ -29,6 +29,7 @@ const FIELD_ALIASES: Record<string, string> = {
   "resin_category": "resinCategory",
   "material category": "resinCategory",
   "カテゴリ": "resinCategory",
+  "カテゴリー": "resinCategory",
   "種類": "resinCategory",
 
   // ── date ─────────────────────────────────────────────────────────────────
@@ -105,6 +106,22 @@ const FIELD_ALIASES: Record<string, string> = {
   "タイプppの場合": "ppType",
   "ppのタイプ": "ppType",
   "ppタイプ": "ppType",
+  "タイプ (pp)": "ppType",
+  "type (pp)": "ppType",
+
+  // ── peType / psType / absType (direct column aliases) ────────────────────
+  "タイプ (pe)": "peType",
+  "type (pe)": "peType",
+  "pe type": "peType",
+  "pe_type": "peType",
+  "タイプ (ps)": "psType",
+  "type (ps)": "psType",
+  "ps type": "psType",
+  "ps_type": "psType",
+  "タイプ (abs)": "absType",
+  "type (abs)": "absType",
+  "abs type": "absType",
+  "abs_type": "absType",
 
   // ── colorTone ────────────────────────────────────────────────────────────
   "colortone": "colorTone",
