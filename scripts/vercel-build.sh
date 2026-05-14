@@ -1,6 +1,9 @@
 #!/bin/sh
 set -ex
 
+echo "=== Pushing database schema ==="
+pnpm --filter @workspace/db run push
+
 echo "=== Building frontend ==="
 BASE_PATH=/ pnpm --filter @workspace/resin-trading run build
 

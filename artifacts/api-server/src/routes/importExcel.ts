@@ -850,7 +850,8 @@ router.post("/import", upload.single("file"), async (req, res) => {
           await db.insert(resinEntriesTable).values(batchValues.slice(ci, ci + CHUNK));
           results.imported += Math.min(CHUNK, batchValues.length - ci);
         } catch (err) {
-          results.errors.push(`シート「${sheetName}」の一括挿入エラー (行 ${ci + 1}〜${Math.min(ci + CHUNK, batchValues.length)}): ${String(err).slice(0, 100)}`);
+          const errMsg = err instanceof Error ? `${err.message}` : String(err);
+          results.errors.push(`シート「${sheetName}」の一括挿入エラー (行 ${ci + 1}〜${Math.min(ci + CHUNK, batchValues.length)}): ${errMsg.slice(0, 500)}`);
           results.skipped += Math.min(CHUNK, batchValues.length - ci);
         }
       }
