@@ -693,6 +693,8 @@ router.post("/import", upload.single("file"), async (req, res) => {
       console.log(`[import]   row[${debugRi}] date="${dateCol ? r[+dateCol] : "?"}" counterparty="${cpCol ? r[+cpCol] : "?"}"`);
     }
 
+    const batchValues: any[] = [];
+
     for (let ri = dataStart; ri < rows.length; ri++) {
       const row = rows[ri];
       // Skip fully empty rows
@@ -768,64 +770,72 @@ router.post("/import", upload.single("file"), async (req, res) => {
       const gradeNorm = data.grade ? String(data.grade).trim() : "";
       const mfrNorm = data.manufacturer ? String(data.manufacturer).trim() : "";
 
-      try {
-        await db.insert(resinEntriesTable).values({
-          entryType,
-          resinCategory,
-          date,
-          counterparty,
-          personInCharge,
-          resinType: resinType as any,
-          manufacturer: mfrNorm || null,
-          grade: gradeNorm || null,
-          ppType: data.ppType ? normalizePPType(String(data.ppType)) as any : null,
-          sampleAvailable: data.sampleAvailable !== undefined ? normalizeSampleAvailable(data.sampleAvailable) : null,
-          packaging: data.packaging ? normalizePackaging(String(data.packaging)) as any : null,
-          packagingWeight: numStr(data.packagingWeight),
-          plainMaker: data.plainMaker ? String(data.plainMaker).trim() || null : null,
-          usageType: data.usageType ? String(data.usageType).trim() || null : null,
-          meltFlowIndexLower: numStr(data.meltFlowIndexLower),
-          meltFlowIndexUpper: numStr(data.meltFlowIndexUpper),
-          charpyLower: numStr(data.charpyLower),
-          charpyUpper: numStr(data.charpyUpper),
-          izodLower: numStr(data.izodLower),
-          izodUpper: numStr(data.izodUpper),
-          densityLower: numStr(data.densityLower),
-          densityUpper: numStr(data.densityUpper),
-          peType: data.peType ? normalizePEType(String(data.peType)) as any : null,
-          psType: data.psType ? normalizePSType(String(data.psType)) as any : null,
-          absType: data.absType ? normalizeABSType(String(data.absType)) as any : null,
-          otherResinType: importedOtherResinType || null,
-          price: numStr(data.price),
-          priceLower: numStr(data.priceLower),
-          priceUpper: numStr(data.priceUpper),
-          finalNegotiatedPrice: numStr(data.finalNegotiatedPrice),
-          quantity: numStr(data.quantity),
-          quantityLower: numStr(data.quantityLower),
-          quantityUpper: numStr(data.quantityUpper),
-          quantityType: data.quantityType ? normalizeQuantityType(String(data.quantityType)) as any : null,
-          locationType: data.locationType ? normalizeLocationType(String(data.locationType)) as any : null,
-          remarks: data.remarks ? String(data.remarks).trim() || null : null,
-          // Extended fields
-          origin: data.origin ? String(data.origin).trim() || null : null,
-          colorTone: data.colorTone ? String(data.colorTone).trim() || null : null,
-          rohs: data.rohs ? String(data.rohs).trim() || null : null,
-          mesh: data.mesh ? String(data.mesh).trim() || null : null,
-          physicalOther: data.physicalOther ? String(data.physicalOther).trim() || null : null,
-          shape: data.shape ? String(data.shape).trim() || null : null,
-          storageLocation: data.storageLocation ? String(data.storageLocation).trim() || null : null,
-          arrivalPrice: numStr(data.arrivalPrice),
-          spotPrice: numStr(data.spotPrice),
-          prospectiveBuyer: data.prospectiveBuyer ? String(data.prospectiveBuyer).trim() || null : null,
-          desiredQuantity: numStr(data.desiredQuantity),
-          proposedTo: data.proposedTo ? String(data.proposedTo).trim() || null : null,
-          sellingPrice: numStr(data.sellingPrice),
-          isClosed: data.isClosed ? normalizeIsClosed(String(data.isClosed)) : "オープン",
-        });
-        results.imported++;
-      } catch (err) {
-        results.errors.push(`行 ${ri + 1} (シート: ${sheetName}): DBエラー — ${String(err).slice(0, 80)}`);
-        results.skipped++;
+      batchValues.push({
+        entryType,
+        resinCategory,
+        date,
+        counterparty,
+        personInCharge,
+        resinType: resinType as any,
+        manufacturer: mfrNorm || null,
+        grade: gradeNorm || null,
+        ppType: data.ppType ? normalizePPType(String(data.ppType)) as any : null,
+        sampleAvailable: data.sampleAvailable !== undefined ? normalizeSampleAvailable(data.sampleAvailable) : null,
+        packaging: data.packaging ? normalizePackaging(String(data.packaging)) as any : null,
+        packagingWeight: numStr(data.packagingWeight),
+        plainMaker: data.plainMaker ? String(data.plainMaker).trim() || null : null,
+        usageType: data.usageType ? String(data.usageType).trim() || null : null,
+        meltFlowIndexLower: numStr(data.meltFlowIndexLower),
+        meltFlowIndexUpper: numStr(data.meltFlowIndexUpper),
+        charpyLower: numStr(data.charpyLower),
+        charpyUpper: numStr(data.charpyUpper),
+        izodLower: numStr(data.izodLower),
+        izodUpper: numStr(data.izodUpper),
+        densityLower: numStr(data.densityLower),
+        densityUpper: numStr(data.densityUpper),
+        peType: data.peType ? normalizePEType(String(data.peType)) as any : null,
+        psType: data.psType ? normalizePSType(String(data.psType)) as any : null,
+        absType: data.absType ? normalizeABSType(String(data.absType)) as any : null,
+        otherResinType: importedOtherResinType || null,
+        price: numStr(data.price),
+        priceLower: numStr(data.priceLower),
+        priceUpper: numStr(data.priceUpper),
+        finalNegotiatedPrice: numStr(data.finalNegotiatedPrice),
+        quantity: numStr(data.quantity),
+        quantityLower: numStr(data.quantityLower),
+        quantityUpper: numStr(data.quantityUpper),
+        quantityType: data.quantityType ? normalizeQuantityType(String(data.quantityType)) as any : null,
+        locationType: data.locationType ? normalizeLocationType(String(data.locationType)) as any : null,
+        remarks: data.remarks ? String(data.remarks).trim() || null : null,
+        // Extended fields
+        origin: data.origin ? String(data.origin).trim() || null : null,
+        colorTone: data.colorTone ? String(data.colorTone).trim() || null : null,
+        rohs: data.rohs ? String(data.rohs).trim() || null : null,
+        mesh: data.mesh ? String(data.mesh).trim() || null : null,
+        physicalOther: data.physicalOther ? String(data.physicalOther).trim() || null : null,
+        shape: data.shape ? String(data.shape).trim() || null : null,
+        storageLocation: data.storageLocation ? String(data.storageLocation).trim() || null : null,
+        arrivalPrice: numStr(data.arrivalPrice),
+        spotPrice: numStr(data.spotPrice),
+        prospectiveBuyer: data.prospectiveBuyer ? String(data.prospectiveBuyer).trim() || null : null,
+        desiredQuantity: numStr(data.desiredQuantity),
+        proposedTo: data.proposedTo ? String(data.proposedTo).trim() || null : null,
+        sellingPrice: numStr(data.sellingPrice),
+        isClosed: data.isClosed ? normalizeIsClosed(String(data.isClosed)) : "オープン",
+      });
+    }
+
+    // Bulk insert all valid rows from this sheet in one query
+    if (batchValues.length > 0) {
+      const CHUNK = 200;
+      for (let ci = 0; ci < batchValues.length; ci += CHUNK) {
+        try {
+          await db.insert(resinEntriesTable).values(batchValues.slice(ci, ci + CHUNK));
+          results.imported += Math.min(CHUNK, batchValues.length - ci);
+        } catch (err) {
+          results.errors.push(`シート「${sheetName}」の一括挿入エラー (行 ${ci + 1}〜${Math.min(ci + CHUNK, batchValues.length)}): ${String(err).slice(0, 100)}`);
+          results.skipped += Math.min(CHUNK, batchValues.length - ci);
+        }
       }
     }
   }
