@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { login } from "@/lib/auth";
 
 interface Props {
   onSuccess: () => void;
-  onRegister: () => void;
-  onForgotPassword: () => void;
 }
 
-export function LoginPage({ onSuccess, onRegister, onForgotPassword }: Props) {
-  const [email, setEmail] = useState("");
+export function LoginPage({ onSuccess }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,12 +14,13 @@ export function LoginPage({ onSuccess, onRegister, onForgotPassword }: Props) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      setError("メールアドレスまたはパスワードが正しくありません");
-    } else {
+    try {
+      await login(password);
       onSuccess();
+    } catch {
+      setError("パスワードが正しくありません");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -31,15 +29,6 @@ export function LoginPage({ onSuccess, onRegister, onForgotPassword }: Props) {
       <div style={styles.card}>
         <h1 style={styles.title}>ログイン</h1>
         <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>メールアドレス</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={styles.input}
-            placeholder="example@email.com"
-          />
           <label style={styles.label}>パスワード</label>
           <input
             type="password"
@@ -48,17 +37,13 @@ export function LoginPage({ onSuccess, onRegister, onForgotPassword }: Props) {
             required
             style={styles.input}
             placeholder="••••••••"
+            autoFocus
           />
           {error && <p style={styles.error}>{error}</p>}
           <button type="submit" disabled={loading} style={styles.btn}>
             {loading ? "処理中..." : "ログイン"}
           </button>
         </form>
-        <div style={styles.links}>
-          <button onClick={onForgotPassword} style={styles.link}>パスワードを忘れた方</button>
-          <span style={{ color: "#ccc" }}>|</span>
-          <button onClick={onRegister} style={styles.link}>新規登録</button>
-        </div>
       </div>
     </div>
   );
@@ -73,6 +58,4 @@ const styles: Record<string, React.CSSProperties> = {
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, outline: "none" },
   error: { color: "#e53e3e", fontSize: 13, margin: "4px 0" },
   btn: { marginTop: 16, padding: "12px", borderRadius: 8, background: "hsl(152,73%,41%)", color: "#fff", fontWeight: 600, fontSize: 15, border: "none", cursor: "pointer" },
-  links: { display: "flex", justifyContent: "center", gap: 12, marginTop: 20, alignItems: "center" },
-  link: { background: "none", border: "none", color: "hsl(152,73%,35%)", fontSize: 13, cursor: "pointer", textDecoration: "underline" },
 };
